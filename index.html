@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Checkbox Selector</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #111;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #222;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            /* box-shadow: 0 15px 25px rgba(255, 255, 255, 0.2); */
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ff6347;
+            /* Orange-Red */
+            text-shadow: 0 5px 15px rgba(255, 99, 71, 0.6);
+        }
+
+        .rename-container {
+            margin-bottom: 20px;
+        }
+
+        .rename-container input {
+            margin: 5px 0;
+            padding: 8px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            border: 2px solid #ff6347;
+            /* Orange-Red border */
+            outline: none;
+            width: 80%;
+            background: #333;
+            color: #fff;
+        }
+
+        .rename-container label {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            display: block;
+            color: #fff;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #fff;
+            text-align: left;
+        }
+
+        button {
+            background: linear-gradient(90deg, #ff6347, #ff2e63);
+            /* Orange-Red gradient */
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.4s ease-in-out;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #ff2e63, #ff6347);
+            transform: scale(1.05);
+            /* box-shadow: 0 10px 20px rgba(255, 99, 71, 0.6); */
+        }
+
+        button.loading {
+            cursor: wait;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff6347;
+            /* Orange-Red */
+            /* text-shadow: 0 0 15px #ff6347, 0 0 30px #ff6347; */
+        }
+
+        #moves {
+            font-size: 1.2em;
+            margin: 20px 0 10px;
+            color: #1abc9c;
+            /* Greenish color */
+            font-weight: bold;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ff6347;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        #aa {
+            color: #c4b93d;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .checkbox-container label {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h2>AI</h2>
+        <div class="rename-container">
+            <label id="aa">Rename Options:</label>
+            <input type="text" value="" oninput="updateCheckboxLabels()">
+            <input type="text" value="" oninput="updateCheckboxLabels()">
+            <input type="text" value="" oninput="updateCheckboxLabels()">
+            <input type="text" value="" oninput="updateCheckboxLabels()">
+            <input type="text" value="" oninput="updateCheckboxLabels()">
+            <button type="button" onclick="finalizeRename()">Finalize</button>
+        </div>
+        <div id="checkboxContainer" class="checkbox-container" style="display: none;">
+            <label><input type="checkbox" name="option" value="A"> A</label>
+            <label><input type="checkbox" name="option" value="B"> B</label>
+            <label><input type="checkbox" name="option" value="C"> C</label>
+            <label><input type="checkbox" name="option" value="D"> D</label>
+            <label><input type="checkbox" name="option" value="E"> E</label>
+            <button type="button" onclick="startSelection()">Start</button>
+        </div>
+        <div id="clickButton" style="display: none;">
+            <p id="result"></p>
+            <button type="button" onclick="showRandomResult()">Click</button>
+            <p id="moves"></p> <!-- Moves Left -->
+        </div>
+    </div>
+
+    <script>
+        let totalMoves = 0; // Track total moves
+        let selectedResults = []; // Array to track already shown results
+
+        function updateCheckboxLabels() {
+            const renameInputs = document.querySelectorAll('.rename-container input');
+            const checkboxes = document.querySelectorAll('.checkbox-container label');
+
+            // Hide all default checkboxes first
+            checkboxes.forEach((checkbox) => {
+                checkbox.style.display = "none";
+            });
+
+            renameInputs.forEach((input, index) => {
+                const checkboxLabel = checkboxes[index];
+                // Show only renamed checkboxes
+                if (input.value.trim() !== "") {
+                    checkboxLabel.style.display = "block";
+                    checkboxLabel.innerHTML = `<input type="checkbox" name="option" value="${input.value}"> ${input.value}`;
+                }
+            });
+        }
+
+        function finalizeRename() {
+            const renameContainer = document.querySelector('.rename-container');
+            const checkboxContainer = document.getElementById("checkboxContainer");
+            const checkboxes = document.querySelectorAll('input[name="option"]');
+
+            // Hide rename container
+            renameContainer.style.display = "none";
+
+            // Show only renamed and selected checkboxes
+            checkboxContainer.style.display = "block";
+        }
+
+        function startSelection() {
+            const checkboxes = document.querySelectorAll('input[name="option"]:checked');
+            const checkboxContainer = document.getElementById("checkboxContainer");
+            const clickButton = document.getElementById("clickButton");
+            const moves = document.getElementById("moves");
+
+            // Validate selection
+            if (checkboxes.length === 0) {
+                alert("Please rename and select at least one option!");
+                return;
+            }
+
+            totalMoves = checkboxes.length; // Initialize moves count
+            checkboxContainer.style.display = "none"; // Hide checkboxes
+            clickButton.style.display = "block"; // Show Click button
+            moves.textContent = `Moves Left: ${totalMoves}`;
+        }
+
+        function showRandomResult() {
+            const checkboxes = document.querySelectorAll('input[name="option"]:checked');
+            const result = document.getElementById("result");
+            const moves = document.getElementById("moves");
+            const button = document.querySelector("#clickButton button");
+
+            // Filter checked checkboxes (selected renamed ones)
+            const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+
+            if (selectedCheckboxes.length === 0) {
+                result.textContent = "Please select at least one checkbox!";
+                return;
+            }
+
+            // Show loading animation at the result location
+            result.innerHTML = `<div class="loader"></div> Loading...`;
+
+            // After 3 seconds, show result
+            setTimeout(() => {
+                button.disabled = false;
+                button.classList.remove("loading");
+                button.textContent = "Click";
+
+                // Randomly select one checkbox from selected
+                const randomIndex = Math.floor(Math.random() * selectedCheckboxes.length);
+                const selectedValue = selectedCheckboxes[randomIndex].value;
+
+                // Ensure each result is only shown once
+                if (selectedResults.includes(selectedValue)) {
+                    showRandomResult();
+                    return;
+                }
+
+                selectedResults.push(selectedValue); // Add to shown results
+
+                // Update result with highlight
+                result.innerHTML = ` <span style="color: #DC143C; font-size: 1.6em; font-weight: bold; ">${selectedValue}</span>`;
+
+                // Update moves left
+                totalMoves -= 1;
+                moves.textContent = `Moves Left: ${totalMoves}`;
+
+                // If no moves left, reset the game
+                if (totalMoves === 0) {
+                    setTimeout(() => {
+                        result.textContent = "Game over!";
+                        moves.textContent = "No more moves!";
+                    }, 10000);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
